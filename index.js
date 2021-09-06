@@ -7,11 +7,14 @@ const formidable = require('express-formidable');
 const fs = require('fs');
 const { v4: uuidv4} = require('uuid');
 const path = require('path');
+var accessLogStream = fs.createWriteStream('./api.log', { flags: 'a' })
+const morgan = require('morgan');
 
 app.use(express.json());
 app.use(cors());
 app.use(bodyparser.urlencoded({extended : true}));
 app.use(formidable());
+app.use(morgan('combined',{ stream : accessLogStream}));
 
 app.use("/images", express.static('images'));
 
