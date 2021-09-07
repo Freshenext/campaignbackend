@@ -22,12 +22,17 @@ const { sequelize, connectToDB : dbConnection, Campaign} = require('./campaignMo
 const campaignSchema = require('./campaignSchema');
 
 app.get('/', async (req,res) => {
-    res.json(await Campaign.findAll());
+    const result = await Campaign.findAll();
+    console.log(result);
+    res.json(result.map(CampaignObj => ({
+        ...CampaignObj.dataValues, urlFull : `https://campaignapi.francis.center/images/${CampaignObj.imagePath}`
+    })));
 });
 
 app.get('/:id', async (req,res) => {
     const { id } = req.params;
-    res.json(await Campaign.findByPk(id));
+    const result = await Campaign.findByPk(id);
+    res.json({...result.dataValues, urlFull : `https://campaignapi.francis.center/images/${result.imagePath}`});
 });
 
 app.post('/', async(req,res) => {
