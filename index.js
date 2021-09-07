@@ -20,7 +20,7 @@ app.use(morgan('combined',{ stream : accessLogStream}));
 
 app.use("/images", express.static('images'));
 
-const { sequelize, connectToDB : dbConnection, Campaign} = require('./campaignModel');
+const { sequelize, connectToDB : dbConnection, Campaign, getCategories} = require('./campaignModel');
 const campaignSchema = require('./campaignSchema');
 const {log} = require("sharp/lib/libvips");
 
@@ -116,6 +116,10 @@ app.delete('/:id', async(req,res) => {
         id : id
         }});
     res.json({ 'message' : `Campaign ID ${id} deleted successfully.`});
+})
+
+app.get('/category/list', async (req,res) => {
+    res.json(await getCategories());
 })
 
 app.listen(PORT, () => {

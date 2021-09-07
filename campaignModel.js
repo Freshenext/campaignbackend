@@ -1,4 +1,4 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes, QueryTypes} = require('sequelize');
 
 var db = 'campaigndb';
 var username = 'root';
@@ -49,4 +49,12 @@ async function connectToDB(){
     return sequelize;
 }
 
-module.exports = { sequelize, connectToDB, Campaign }
+async function getCategories(){
+    const db = await connectToDB();
+    const categories = await db.query(`select name from campaigns group by category order by name`,
+        { type: QueryTypes.SELECT});
+    console.log(`AHOY`, categories);
+    return categories;
+}
+
+module.exports = { sequelize, connectToDB, Campaign, getCategories }
