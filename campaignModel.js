@@ -1,6 +1,15 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-const sequelize = new Sequelize('campaigndb', 'root', '', {
+var db = 'campaigndb';
+var username = 'root';
+var pw = '';
+
+if(process.env.NODE_ENV === "production"){
+    db = '';
+    username = '';
+    pw = '';
+}
+const sequelize = new Sequelize(db, username, pw, {
     host : 'localhost',
     port: 3306,
     dialect : "mysql"

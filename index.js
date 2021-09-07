@@ -9,6 +9,8 @@ const { v4: uuidv4} = require('uuid');
 const path = require('path');
 var accessLogStream = fs.createWriteStream('./api.log', { flags: 'a' })
 const morgan = require('morgan');
+const sharp = require('sharp');
+const ImageHandler = require('./classImageHandler');
 
 app.use(express.json());
 app.use(cors());
@@ -20,10 +22,10 @@ app.use("/images", express.static('images'));
 
 const { sequelize, connectToDB : dbConnection, Campaign} = require('./campaignModel');
 const campaignSchema = require('./campaignSchema');
+const {log} = require("sharp/lib/libvips");
 
 app.get('/', async (req,res) => {
     const result = await Campaign.findAll();
-    console.log(result);
     res.json(result.map(CampaignObj => ({
         ...CampaignObj.dataValues, urlFull : `https://campaignapi.francis.center/images/${CampaignObj.imagePath}`
     })));
@@ -32,7 +34,10 @@ app.get('/', async (req,res) => {
 app.get('/:id', async (req,res) => {
     const { id } = req.params;
     const result = await Campaign.findByPk(id);
-    res.json({...result.dataValues, urlFull : `https://campaignapi.francis.center/images/${result.imagePath}`});
+    if(result)
+        res.json({...result.dataValues, urlFull : `https://campaignapi.francis.center/images/${result.imagePath}`});
+    else
+        res.json({});
 });
 
 app.post('/', async(req,res) => {
@@ -48,22 +53,27 @@ app.post('/', async(req,res) => {
         return res.status(400).json({ error : error.details[0].message});
 
     /* First create campaign in DB */
-    const uniqueIdentifier = uuidv4();
     const image = req.files[Object.keys(req.files)[0]];
-    const imageExt = path.extname(image.name);
-    const imagePath = `./images/${uniqueIdentifier}${imageExt}`
-    const newCampaign = await Campaign.create({ name, category, url, imagePath : uniqueIdentifier + imageExt});
+    const Image = await new ImageHandler(image.path);
+
+    const newCampaign = await Campaign.create({ name, category, url, imagePath : Image.uniqueIdentifier + '.jpeg'});
     /* Get the ID and save the image */
 
     // Move image to new directory
-    await fs.writeFile(imagePath, await fs.readFileSync(image.path), (err)=>{
-        if(err){
-            return res.status(400).json({ error : err.message});
+
+    await new Promise(async (resolve,reject) => {
+        try {
+            await Image.saveImageToFolder();
+            resolve();
+        } catch (err){
+            reject(err);
         }
-    })
+    }).then(() => {
+        return res.json(newCampaign);
 
-
-    res.json(newCampaign);
+    }).catch(err => {
+        return res.status(400).json({ error : err.message});
+    });
 })
 
 app.put('/:id', async(req,res)=>{
@@ -85,22 +95,19 @@ app.put('/:id', async(req,res)=>{
     /* First create campaign in DB */
 
     if(imageExists === 1){
-        const uniqueIdentifier = uuidv4();
+        await ImageHandler.deleteImage(CampaignEdit.imagePath).catch(err => console.log(err));
         const image = req.files[Object.keys(req.files)[0]];
-        const imageExt = path.extname(image.name);
-        const imagePath = `./images/${uniqueIdentifier}${imageExt}`;
-        await CampaignEdit.update({ name, category, imagePath : uniqueIdentifier + imageExt});
+
+        const Image = await new ImageHandler(image.path);
+
+        await CampaignEdit.update({ name, category, imagePath : Image.uniqueIdentifier + '.jpeg'});
         //Move img to directory
-        await fs.writeFile(imagePath, await fs.readFileSync(image.path), (err)=>{
-            if(err){
-                return res.status(400).json({ error : err.message});
-            }
-        })
+        await Image.saveImageToFolder();
     } else {
         await CampaignEdit.update({ name, category, url});
     }
 
-    res.json({ 'message' : `Campaign ID updated`});
+    res.json(CampaignEdit);
 })
 
 app.delete('/:id', async(req,res) => {
