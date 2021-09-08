@@ -5,9 +5,9 @@ var username = 'root';
 var pw = '';
 
 if(process.env.NODE_ENV === "production"){
-    db = '';
-    username = '';
-    pw = '';
+    db = 'frandev_campaign';
+    username = 'frandev_campaign';
+    pw = 'campaign123!@';
 }
 const sequelize = new Sequelize(db, username, pw, {
     host : 'localhost',
@@ -51,7 +51,7 @@ async function connectToDB(){
 
 async function getCategories(){
     const db = await connectToDB();
-    const categories = await db.query(`select category as name from campaigns group by category order by name`,
+    const categories = await db.query(`select category as name from Campaigns group by category order by name`,
         { type: QueryTypes.SELECT});
     console.log(`AHOY`, categories);
     return categories;

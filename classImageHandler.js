@@ -1,5 +1,5 @@
 const fs = require('fs');
-const sharp = require('sharp');
+const jimp = require('jimp');
 const imageFolder = require('path').dirname(require.main.filename) + `\\images\\`;
 const { v4: uuidv4} = require('uuid');
 
@@ -20,10 +20,16 @@ class ImageHandler {
     }
 
     async saveImageToFolder(){
-        await sharp(this.imageBuffer)
-            .resize(400)
-            .jpeg({ quality: 80})
-            .toFile(`${imageFolder}${this.uniqueIdentifier}.jpeg`);
+        await jimp.read(this.imageBuffer)
+            .then((pic, err) => {
+                console.log(err, pic);
+                pic.resize(400, pic.getHeight())
+                    .quality(80)
+                    .write(`${imageFolder}${this.uniqueIdentifier}.jpeg`);
+            });
+            // .resize(400)
+            // .jpeg({ quality: 80})
+            // .toFile(`${imageFolder}${this.uniqueIdentifier}.jpeg`);
     }
 
     static deleteImage(imageName){

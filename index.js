@@ -9,7 +9,6 @@ const { v4: uuidv4} = require('uuid');
 const path = require('path');
 var accessLogStream = fs.createWriteStream('./api.log', { flags: 'a' })
 const morgan = require('morgan');
-const sharp = require('sharp');
 const ImageHandler = require('./classImageHandler');
 
 app.use(express.json());
@@ -22,7 +21,6 @@ app.use("/images", express.static('images'));
 
 const { sequelize, connectToDB : dbConnection, Campaign, getCategories} = require('./campaignModel');
 const campaignSchema = require('./campaignSchema');
-const {log} = require("sharp/lib/libvips");
 
 app.get('/', async (req,res) => {
     const result = await Campaign.findAll();
