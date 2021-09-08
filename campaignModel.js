@@ -51,7 +51,7 @@ async function connectToDB(){
 
 async function getCategories(){
     const db = await connectToDB();
-    const categories = await db.query(`select name from campaigns group by category order by name`,
+    const categories = await db.query(`select category as name from campaigns group by category order by name`,
         { type: QueryTypes.SELECT});
     console.log(`AHOY`, categories);
     return categories;
