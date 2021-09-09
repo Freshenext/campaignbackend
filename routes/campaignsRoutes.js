@@ -23,7 +23,7 @@ Router.get('/:id', async (req,res) => {
 });
 
 Router.post('/', async(req,res) => {
-    const { value : { name, category, url}, error} = campaignSchema.validate(req.fields);
+    const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate(req.fields);
     const imageExists = Object.keys(req.files).length;
     if(imageExists <= 0)
         return res.status(400).json({ error : "An image must be sent in order to create a campaign."});
@@ -38,7 +38,7 @@ Router.post('/', async(req,res) => {
     const image = req.files[Object.keys(req.files)[0]];
     const Image = await new ImageHandler(image.path);
 
-    const newCampaign = await Campaign.create({ name, category, url, imagePath : Image.uniqueIdentifier + '.jpeg'});
+    const newCampaign = await Campaign.create({ name, category, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
     /* Get the ID and save the image */
 
     // Move image to new directory
@@ -64,7 +64,7 @@ Router.put('/:id', async(req,res)=>{
         return res.status(400).json({ error : "Object not found"});
     }
 
-    const { value : { name, category, url}, error} = campaignSchema.validate(req.fields);
+    const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate(req.fields);
 
     const imageExists = Object.keys(req.files).length;
 
@@ -82,11 +82,11 @@ Router.put('/:id', async(req,res)=>{
 
         const Image = await new ImageHandler(image.path);
 
-        await CampaignEdit.update({ name, category, imagePath : Image.uniqueIdentifier + '.jpeg'});
+        await CampaignEdit.update({ name, category, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
         //Move img to directory
         await Image.saveImageToFolder();
     } else {
-        await CampaignEdit.update({ name, category, url});
+        await CampaignEdit.update({ name, category, url,  isMobile, isDesktop});
     }
 
     res.json(CampaignEdit);
