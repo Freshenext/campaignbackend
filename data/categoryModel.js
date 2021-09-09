@@ -1,6 +1,5 @@
 const { sequelize, DataTypes } = require('./dbClass');
 
-
 const Category = sequelize.define('Category', {
     name : {
         type : DataTypes.STRING,
@@ -8,6 +7,4 @@ const Category = sequelize.define('Category', {
     }
 });
 
-//Category.sync({alter: true});
-
-module.exports.Category = Category;
+module.exports = Category;
