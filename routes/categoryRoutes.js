@@ -25,5 +25,10 @@ Router.post('/', async(req,res)=> {
     return res.json(newCategory);
 })
 
+Router.delete('/:id', async(req,res) => {
+    const {id} = req.params;
+    await Category.destroy({ where : { id }})
+    res.json({ 'message' : `Category ${id} deleted successfully.`})
+})
 
 module.exports = Router;

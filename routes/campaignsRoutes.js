@@ -1,13 +1,14 @@
 const express = require('express');
-const {Campaign} = require("./../data");
+const {Campaign, CampaignCategoriesModel} = require("./../data");
 const campaignSchema = require("./../data/schemas/campaignSchema");
 const ImageHandler = require("./../classImageHandler");
+const {Category} = require("../data");
 
 const Router = express.Router();
 
 
 Router.get('/', async (req,res) => {
-    const result = await Campaign.findAll();
+    const result = await Campaign.findAll({ include : Category});
     res.json(result.map(CampaignObj => ({
         ...CampaignObj.dataValues, urlFull : `https://campaignapi.francis.center/images/${CampaignObj.imagePath}`
     })));
@@ -23,7 +24,9 @@ Router.get('/:id', async (req,res) => {
 });
 
 Router.post('/', async(req,res) => {
-    const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate(req.fields);
+    const categories = req.fields.category.split(',');
+    const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate({...req.fields, category : categories});
+
     const imageExists = Object.keys(req.files).length;
     if(imageExists <= 0)
         return res.status(400).json({ error : "An image must be sent in order to create a campaign."});
@@ -39,6 +42,11 @@ Router.post('/', async(req,res) => {
     const Image = await new ImageHandler(image.path);
 
     const newCampaign = await Campaign.create({ name, category, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
+
+    for (const category of categories){
+        await CampaignCategoriesModel.create({ CategoryId : category, CampaignId : newCampaign.id  })
+    }
+
     /* Get the ID and save the image */
 
     // Move image to new directory
