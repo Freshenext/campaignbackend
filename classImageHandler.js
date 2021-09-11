@@ -25,7 +25,7 @@ class ImageHandler {
                 console.log(err, pic);
                 pic.resize(400, pic.getHeight())
                     .quality(80)
-                    .write(`${imageFolder}${this.uniqueIdentifier}.jpeg`);
+                    .write(`./images/${this.uniqueIdentifier}.jpeg`);
             });
             // .resize(400)
             // .jpeg({ quality: 80})

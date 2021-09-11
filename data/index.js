@@ -6,6 +6,7 @@ const {sequelize} = require('./dbClass');
 categoryModel.belongsToMany(campaignModel, { through : campaignCategoriesModel});
 campaignModel.belongsToMany(categoryModel, { through : campaignCategoriesModel});
 
+
 module.exports = {
     Category : categoryModel,
     Campaign : campaignModel,
