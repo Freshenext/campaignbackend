@@ -72,7 +72,13 @@ Router.put('/:id', async(req,res)=>{
         return res.status(400).json({ error : "Object not found"});
     }
 
-    const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate(req.fields);
+    const categories = req.fields.category.split(',');
+    const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate({ category : categories,
+        name : req.fields.name,
+        url : req.fields.url,
+        isMobile : req.fields.isMobile,
+        isDesktop : req.fields.isDesktop
+    });
 
     const imageExists = Object.keys(req.files).length;
 
@@ -83,18 +89,25 @@ Router.put('/:id', async(req,res)=>{
         return res.status(400).json({ error : error.details[0].message});
 
     /* First create campaign in DB */
-
+    await CampaignCategoriesModel.destroy({ where : { CampaignId : req.params.id }});
     if(imageExists === 1){
         await ImageHandler.deleteImage(CampaignEdit.imagePath).catch(err => console.log(err));
         const image = req.files[Object.keys(req.files)[0]];
 
         const Image = await new ImageHandler(image.path);
 
-        await CampaignEdit.update({ name, category, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
+        await CampaignEdit.update({ name, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
+
+        for (const category of categories){
+            await CampaignCategoriesModel.create({ CategoryId : category, CampaignId : req.params.id  })
+        }
         //Move img to directory
         await Image.saveImageToFolder();
     } else {
-        await CampaignEdit.update({ name, category, url,  isMobile, isDesktop});
+        await CampaignEdit.update({ name, url,  isMobile, isDesktop});
+        for (const category of categories){
+            await CampaignCategoriesModel.create({ CategoryId : category, CampaignId : req.params.id  })
+        }
     }
 
     res.json(CampaignEdit);
