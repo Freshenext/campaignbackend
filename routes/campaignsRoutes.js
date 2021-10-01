@@ -10,8 +10,8 @@ const Router = express.Router();
 Router.get('/client/:ClientId', async (req,res) => {
     const { ClientId } = req.params;
     const result = await sequelize.query(`
-    select ca.*, case when cca.id is null then 0 else 1 end as isClient from campaigns ca
-        left join clientcampaigns cca on cca.CampaignId = ca.id and cca.ClientId = $ClientId
+    select ca.*, case when cca.id is null then 0 else 1 end as isClient from Campaigns ca
+        left join ClientCampaigns cca on cca.CampaignId = ca.id and cca.ClientId = $ClientId
     group by ca.id
     `, { type : 'SELECT', bind : { ClientId }});
     res.json(result);
@@ -21,17 +21,17 @@ Router.get('/client/:ClientUrl/all', async (req,res) => {
     const { ClientUrl } = req.params;
     const campaignsOfClient = await sequelize.query(`
     select ca.*, case when cca.id is null then 0 else 1 end as isClient,
-    (select group_concat(categoryName separator ',') from campaigncategories
-        where CampaignId = cca.CampaignId) as categories from campaigns ca
-        join clientcampaigns cca on cca.CampaignId = ca.id
-            join clients cli on cli.id = cca.ClientId and cli.url = $ClientUrl
+    (select group_concat(categoryName separator ',') from CampaignCategories
+        where CampaignId = cca.CampaignId) as categories from Campaigns ca
+        join ClientCampaigns cca on cca.CampaignId = ca.id
+            join Clients cli on cli.id = cca.ClientId and cli.url = $ClientUrl
     group by ca.id
     `, { type : 'SELECT', bind : { ClientUrl }});
     const categories = await sequelize.query(`
-    select cct.categoryName from campaigncategories cct
-        join campaigns c on cct.CampaignId = c.id
-            join clientcampaigns c2 on c.id = c2.CampaignId
-                join clients c3 on c2.ClientId = c3.id and c3.url = $ClientUrl
+    select cct.categoryName from CampaignCategories cct
+        join Campaigns c on cct.CampaignId = c.id
+            join ClientCampaigns c2 on c.id = c2.CampaignId
+                join Clients c3 on c2.ClientId = c3.id and c3.url = $ClientUrl
     group by cct.categoryName
     `, { type : 'SELECT', bind : { ClientUrl }});
     res.json({ campaigns : campaignsOfClient, categories });
@@ -54,7 +54,7 @@ Router.get('/:id', async (req,res) => {
 });
 
 Router.post('/', async(req,res) => {
-    const categories = req.fields.category.split(',');
+    const categories = req.fields.category?.split(',');
     const { value : { name, category, url, isMobile, isDesktop}, error} = campaignSchema.validate({...req.fields, category : categories});
 
     const imageExists = Object.keys(req.files).length;

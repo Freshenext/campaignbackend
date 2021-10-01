@@ -5,7 +5,7 @@ const Router = express.Router();
 
 const fetchCategories = async () => {
     return sequelize.query(
-        `select *, categoryName as name from campaigncategories
+        `select *, categoryName as name from CampaignCategories
              group by categoryName`, { type: 'SELECT'})
 }
 
