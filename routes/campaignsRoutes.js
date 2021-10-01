@@ -20,12 +20,20 @@ Router.get('/client/:ClientId', async (req,res) => {
 Router.get('/client/:ClientUrl/all', async (req,res) => {
     const { ClientUrl } = req.params;
     const campaignsOfClient = await sequelize.query(`
-    select ca.*, case when cca.id is null then 0 else 1 end as isClient from campaigns ca
+    select ca.*, case when cca.id is null then 0 else 1 end as isClient,
+    (select group_concat(categoryName separator ',') from campaigncategories
+        where CampaignId = cca.CampaignId) as categories from campaigns ca
         join clientcampaigns cca on cca.CampaignId = ca.id
             join clients cli on cli.id = cca.ClientId and cli.url = $ClientUrl
     group by ca.id
     `, { type : 'SELECT', bind : { ClientUrl }});
-    const categories = await fetchCategories()
+    const categories = await sequelize.query(`
+    select cct.categoryName from campaigncategories cct
+        join campaigns c on cct.CampaignId = c.id
+            join clientcampaigns c2 on c.id = c2.CampaignId
+                join clients c3 on c2.ClientId = c3.id and c3.url = $ClientUrl
+    group by cct.categoryName
+    `, { type : 'SELECT', bind : { ClientUrl }});
     res.json({ campaigns : campaignsOfClient, categories });
 })
 
@@ -128,7 +136,7 @@ Router.put('/:id', async(req,res)=>{
     } else {
         await CampaignEdit.update({ name, url,  isMobile, isDesktop});
         for (const category of categories){
-            await CampaignCategoriesModel.create({ CategoryId : category, CampaignId : req.params.id  })
+            await CampaignCategoriesModel.create({ categoryName : category, CampaignId : req.params.id  })
         }
     }
 

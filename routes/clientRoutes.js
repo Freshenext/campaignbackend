@@ -20,7 +20,10 @@ Router.get('/:id', async (req,res) => {
 });
 
 Router.post('/', async (req,res) => {
-    Client.create(req.fields)
+    Client.create({
+        ...req.fields,
+        url : req.fields.url.replace(/\s\s+/g, '-').replace(/ /g, '-'),
+    })
         .then((client) => {
             res.json(client);
         })
@@ -32,7 +35,10 @@ Router.post('/', async (req,res) => {
 
 Router.put('/:id', (req,res) => {
     const { id } = req.params;
-    Client.update(req.fields, { where : { id }})
+    Client.update({
+        ...req.fields,
+        url : req.fields.url.replace(/\s\s+/g, '-').replace(/ /g, '-'),
+    }, { where : { id }})
         .then(async (result) => {
             res.json(await Client.findByPk(id));
         })
