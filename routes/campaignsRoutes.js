@@ -2,13 +2,35 @@ const express = require('express');
 const {Campaign, CampaignCategoriesModel} = require("./../data");
 const campaignSchema = require("./../data/schemas/campaignSchema");
 const ImageHandler = require("./../classImageHandler");
-const {Category} = require("../data");
-
+const {Category, ClientCampaignModel} = require("../data");
+const {sequelize} = require("../data/dbClass");
+const { fetchCategories } = require('./categoryRoutes');
 const Router = express.Router();
 
+Router.get('/client/:ClientId', async (req,res) => {
+    const { ClientId } = req.params;
+    const result = await sequelize.query(`
+    select ca.*, case when cca.id is null then 0 else 1 end as isClient from campaigns ca
+        left join clientcampaigns cca on cca.CampaignId = ca.id and cca.ClientId = $ClientId
+    group by ca.id
+    `, { type : 'SELECT', bind : { ClientId }});
+    res.json(result);
+})
+
+Router.get('/client/:ClientUrl/all', async (req,res) => {
+    const { ClientUrl } = req.params;
+    const campaignsOfClient = await sequelize.query(`
+    select ca.*, case when cca.id is null then 0 else 1 end as isClient from campaigns ca
+        join clientcampaigns cca on cca.CampaignId = ca.id
+            join clients cli on cli.id = cca.ClientId and cli.url = $ClientUrl
+    group by ca.id
+    `, { type : 'SELECT', bind : { ClientUrl }});
+    const categories = await fetchCategories()
+    res.json({ campaigns : campaignsOfClient, categories });
+})
 
 Router.get('/', async (req,res) => {
-    const result = await Campaign.findAll({ include : Category});
+    const result = await Campaign.findAll({ include : CampaignCategoriesModel, });
     res.json(result.map(CampaignObj => ({
         ...CampaignObj.dataValues, urlFull : `https://campaignapi.francis.center/images/${CampaignObj.imagePath}`
     })));
@@ -16,7 +38,7 @@ Router.get('/', async (req,res) => {
 
 Router.get('/:id', async (req,res) => {
     const { id } = req.params;
-    const result = await Campaign.findByPk(id);
+    const result = await Campaign.findByPk(id,  { include: CampaignCategoriesModel });
     if(result)
         res.json({...result.dataValues, urlFull : `https://campaignapi.francis.center/images/${result.imagePath}`});
     else
@@ -44,7 +66,7 @@ Router.post('/', async(req,res) => {
     const newCampaign = await Campaign.create({ name, category, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
 
     for (const category of categories){
-        await CampaignCategoriesModel.create({ CategoryId : category, CampaignId : newCampaign.id  })
+        await CampaignCategoriesModel.create({ categoryName : category, CampaignId : newCampaign.id  })
     }
 
     /* Get the ID and save the image */

@@ -1,14 +1,22 @@
-const categoryModel = require('./categoryModel');
 const campaignModel = require('./campaignModel');
+const clientModel = require('./clientModel');
 const campaignCategoriesModel = require('./campaignCategoriesModel');
+const clientCampaignModel = require('./clientCampaignsModel');
 const {sequelize} = require('./dbClass');
 
-categoryModel.belongsToMany(campaignModel, { through : campaignCategoriesModel});
-campaignModel.belongsToMany(categoryModel, { through : campaignCategoriesModel});
 
+campaignCategoriesModel.belongsTo(campaignModel);
+campaignModel.hasMany(campaignCategoriesModel);
+campaignModel.belongsToMany(clientModel, { through: clientCampaignModel});
+
+clientModel.belongsToMany(campaignModel, { through: clientCampaignModel});
+
+
+//sequelize.sync({ force: true })//
 
 module.exports = {
-    Category : categoryModel,
     Campaign : campaignModel,
-    CampaignCategoriesModel : campaignCategoriesModel
+    CampaignCategoriesModel : campaignCategoriesModel,
+    Client : clientModel,
+    ClientCampaignModel : clientCampaignModel
 }

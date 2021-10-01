@@ -5,7 +5,11 @@ const CampaignCategories = sequelize.define('CampaignCategories', {
         type: DataTypes.INTEGER,
         autoIncrement : true,
         primaryKey : true
+    },
+    categoryName : {
+        type : DataTypes.STRING,
+        allowNull: false
     }
 });
 
-module.exports = CampaignCategories;//
+module.exports = CampaignCategories;
