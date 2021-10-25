@@ -12,7 +12,7 @@ campaignModel.belongsToMany(clientModel, { through: clientCampaignModel});
 clientModel.belongsToMany(campaignModel, { through: clientCampaignModel});
 
 
-//sequelize.sync({ force: true })//
+//sequelize.sync({ force: true })
 
 module.exports = {
     Campaign : campaignModel,

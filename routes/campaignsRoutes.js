@@ -19,7 +19,7 @@ Router.get('/client/:ClientId', async (req,res) => {
 
 Router.get('/client/:ClientUrl/all', async (req,res) => {
     const { ClientUrl } = req.params;
-    const campaignsOfClient = await sequelize.query(`
+    const campaignTransform = await sequelize.query(`
     select ca.*, case when cca.id is null then 0 else 1 end as isClient,
     (select group_concat(categoryName separator ',') from CampaignCategories
         where CampaignId = cca.CampaignId) as categories from Campaigns ca
@@ -27,6 +27,11 @@ Router.get('/client/:ClientUrl/all', async (req,res) => {
             join Clients cli on cli.id = cca.ClientId and cli.url = $ClientUrl
     group by ca.id
     `, { type : 'SELECT', bind : { ClientUrl }});
+
+    const campaignsOfClient = campaignTransform.map(campaign => ({
+        ...campaign,
+        urlFull : `https://campaignapi.francis.center/images/${campaign.imagePath}`,
+    }))
     const categories = await sequelize.query(`
     select cct.categoryName from CampaignCategories cct
         join Campaigns c on cct.CampaignId = c.id
@@ -129,7 +134,7 @@ Router.put('/:id', async(req,res)=>{
         await CampaignEdit.update({ name, url, isMobile, isDesktop, imagePath : Image.uniqueIdentifier + '.jpeg'});
 
         for (const category of categories){
-            await CampaignCategoriesModel.create({ CategoryId : category, CampaignId : req.params.id  })
+            await CampaignCategoriesModel.create({categoryName : category, CampaignId : req.params.id  })
         }
         //Move img to directory
         await Image.saveImageToFolder();
