@@ -42,12 +42,29 @@ Router.get('/client/:ClientUrl/all', async (req,res) => {
     res.json({ campaigns : campaignsOfClient, categories });
 })
 
+Router.get('/clientall', async (req,res) => {
+    const campaigns = await sequelize.query(`
+        select *, 
+       (select GROUP_CONCAT(categoryName SEPARATOR ',') from CampaignCategories ctt where ctt.CampaignId = camp.id) as categories,
+        concat('https://campaignapi.francis.center/images/', imagePath) as urlFull
+        from Campaigns camp`, { type: 'SELECT'});
+
+    const categories = await sequelize.query(`
+    select cct.categoryName from CampaignCategories cct
+        join Campaigns c on cct.CampaignId = c.id
+    group by cct.categoryName
+    `, { type : 'SELECT'});
+
+    res.json({ campaigns, categories });
+})
+
 Router.get('/', async (req,res) => {
     const result = await Campaign.findAll({ include : CampaignCategoriesModel, });
     res.json(result.map(CampaignObj => ({
         ...CampaignObj.dataValues, urlFull : `https://campaignapi.francis.center/images/${CampaignObj.imagePath}`
     })));
 });
+
 
 Router.get('/:id', async (req,res) => {
     const { id } = req.params;
