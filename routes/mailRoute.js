@@ -4,9 +4,8 @@ const Joi = require('joi');
 const Router = express.Router();
 
 const mailSchema = Joi.object({
-    message: Joi.string().required(),
-    to: Joi.string().required(),
-    subject: Joi.string().required(),
+    email: Joi.string().email().required(),
+    name: Joi.string().required(),
 })
 
 const transporter = mailer.createTransport({
@@ -31,7 +30,7 @@ const sendMail = async (to, subject, message) => {
     });
 };
 
-Router.post('/', async (req,res) => {
+Router.post('/generateLead', async (req,res) => {
     const { error, value } = mailSchema.validate(req.fields);
     if(error){
         return res.status(400).json({
@@ -39,9 +38,16 @@ Router.post('/', async (req,res) => {
             message: `There was an error: ${error.details[0].message}`
         })
     }
-    const { to, message, subject } = value;
+    const { email, name } = value;
 
-    await sendMail(to, subject, message);
+    let subject = `You have generated a new lead!`;
+    let message = `You have generated a new lead from demo.sofiapulse.com:<br /><br />
+    
+    Name: ${name} <br />
+    Email: ${email}
+    `;
+
+    await sendMail('joe@sofiapulse.com', subject, message);
     res.json({ success: true, message: 'Mail sent successfully.'});
 });
 
